@@ -1,1 +1,46 @@
+name: Deploy Nginx with Custom HTML
 
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '14'
+
+    - name: Install dependencies
+      run: npm install
+
+    - name: Connect to EC2 via SSH and Deploy HTML
+      uses: appleboy/ssh-action@v0.1.2
+      with:
+        host: ${{ secrets.EC2_PUBLIC_IP }}
+        username: ubuntu
+        key: ${{ secrets.EC2_SSH_KEY }}
+        port: 22
+        script: |
+          # Update packages and install Nginx
+          sudo apt update
+          sudo apt install nginx -y
+          
+          # Create a folder 'shubh' inside /var/www/html
+          sudo mkdir -p /var/www/html/shubh
+          
+          # Create 1.html and 2.html in the shubh folder
+          echo '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Shubh\'s Page</title></head><body><h1>Hello, This is Shubh\'s Page!</h1><p>Welcome to my Nginx page served using GitHub Actions CI/CD pipeline.</p></body></html>' | sudo tee /var/www/html/shubh/1.html
+          
+          # Create an empty 2.html file
+          sudo touch /var/www/html/shubh/2.html
+          
+          # Restart Nginx to apply changes
+          sudo systemctl restart nginx
