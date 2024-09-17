@@ -3,7 +3,7 @@ name: Deploy to EC2
 on:
   push:
     branches:
-      - main
+      - main  # Change this if you want to trigger on a different branch
 
 jobs:
   deploy:
@@ -13,40 +13,24 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
 
-    - name: Connect to EC2 and set up Nginx
-      uses: appleboy/ssh-action@v0.1.2
-      with:
-        host: ${{ secrets.EC2_PUBLIC_IP }}   # This comes from GitHub Secrets
-        username: ${{ secrets.EC2_USERNAME }}  # This comes from GitHub Secrets
-        key: ${{ secrets.EC2_SSH_KEY }}  # Your private SSH key stored in GitHub Secrets
-        port: 22
-        script: |
+    - name: Set up SSH key
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+        ssh-keyscan -H ${{ secrets.EC2_PUBLIC_IP }} >> ~/.ssh/known_hosts
+
+    - name: Deploy to EC2
+      run: |
+        ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_PUBLIC_IP }} << 'EOF'
           # Update and install Nginx
           sudo apt update
-          sudo apt install nginx -y
-          
-          # Create directory and files
+          sudo apt install -y nginx
+
+          # Create directory and HTML file
           sudo mkdir -p /var/www/html/shubh
-          echo '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Shubh\'s Page</title></head><body><h1>Hello, This is Shubh\'s Page!</h1><p>Welcome to my Nginx page served using GitHub Actions CI/CD pipeline.</p></body></html>' | sudo tee /var/www/html/shubh/1.html
-          sudo touch /var/www/html/shubh/2.html
-
-          # Update Nginx config
-          sudo tee /etc/nginx/sites-available/default <<EOF
-          server {
-              listen 80 default_server;
-              listen [::]:80 default_server;
-
-              root /var/www/html;
-
-              index 1.html index.html;
-
-              server_name _;
-
-              location / {
-                  try_files \$uri \$uri/ =404;
-              }
-          }
-          EOF
-
-          # Restart Nginx to apply changes
+          echo '<!DOCTYPE html><html><head><title>Shubh\'s Page</title></head><body><h1>Hello, from Shubh!</h1></body></html>' | sudo tee /var/www/html/shubh/1.html
+          
+          # Restart Nginx
           sudo systemctl restart nginx
+        EOF
