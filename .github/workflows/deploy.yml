@@ -3,7 +3,7 @@ name: Deploy to EC2 and Install Nginx
 on:
   push:
     branches:
-      - main  # Trigger this workflow on pushes to the main branch
+      - main  # Trigger on pushes to the main branch
 
 jobs:
   deploy:
@@ -20,7 +20,7 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Connect to EC2, create folder, and install Nginx
+      - name: Connect to EC2, install Nginx, create folder, and create HTML file
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
             # Update package lists
@@ -29,10 +29,10 @@ jobs:
             # Install Nginx
             sudo apt-get install -y nginx
 
-            # Create folder 'shubh' inside /var/www/html
+            # Create 'shubh' folder inside /var/www/html
             sudo mkdir -p /var/www/html/shubh
 
-            # Create index.html inside 'shubh' folder with the specified HTML content
+            # Create index.html inside 'shubh' folder with extended HTML and CSS
             echo "<!-- 1.html -->
             <!DOCTYPE html>
             <html lang=\"en\">
@@ -40,10 +40,52 @@ jobs:
                 <meta charset=\"UTF-8\">
                 <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">
                 <title>Shubh's Page</title>
+                <style>
+                    body {
+                        font-family: Arial, sans-serif;
+                        background-color: #f4f4f4;
+                        margin: 0;
+                        padding: 0;
+                        display: flex;
+                        justify-content: center;
+                        align-items: center;
+                        height: 100vh;
+                    }
+                    .container {
+                        text-align: center;
+                        background-color: #fff;
+                        padding: 20px;
+                        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+                        border-radius: 10px;
+                    }
+                    h1 {
+                        color: #333;
+                        font-size: 36px;
+                    }
+                    p {
+                        color: #555;
+                        font-size: 18px;
+                    }
+                    .button {
+                        display: inline-block;
+                        margin-top: 20px;
+                        padding: 10px 20px;
+                        background-color: #007bff;
+                        color: white;
+                        text-decoration: none;
+                        border-radius: 5px;
+                    }
+                    .button:hover {
+                        background-color: #0056b3;
+                    }
+                </style>
             </head>
             <body>
-                <h1>Hello, This is Shubh's Page!</h1>
-                <p>Welcome to my Nginx page served using GitHub Actions CI/CD pipeline.</p>
+                <div class=\"container\">
+                    <h1>Hello, This is Shubh's Page!</h1>
+                    <p>Welcome to my Nginx page served using GitHub Actions CI/CD pipeline.</p>
+                    <a href=\"https://github.com/shubh\" class=\"button\">Visit My GitHub</a>
+                </div>
             </body>
             </html>" | sudo tee /var/www/html/shubh/index.html
 
