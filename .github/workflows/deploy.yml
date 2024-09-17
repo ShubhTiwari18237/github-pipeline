@@ -20,7 +20,7 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Connect to EC2 and install Nginx
+      - name: Connect to EC2, create folder, and install Nginx
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
             # Update package lists
@@ -29,8 +29,23 @@ jobs:
             # Install Nginx
             sudo apt-get install -y nginx
 
-            # Create a custom Nginx index page
-            echo "Welcome to my custom Nginx page!" | sudo tee /var/www/html/index.nginx-debian.html
+            # Create folder 'shubh' inside /var/www/html
+            sudo mkdir -p /var/www/html/shubh
+
+            # Create index.html inside 'shubh' folder with the specified HTML content
+            echo "<!-- 1.html -->
+            <!DOCTYPE html>
+            <html lang=\"en\">
+            <head>
+                <meta charset=\"UTF-8\">
+                <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">
+                <title>Shubh's Page</title>
+            </head>
+            <body>
+                <h1>Hello, This is Shubh's Page!</h1>
+                <p>Welcome to my Nginx page served using GitHub Actions CI/CD pipeline.</p>
+            </body>
+            </html>" | sudo tee /var/www/html/shubh/index.html
 
             # Restart Nginx to apply changes
             sudo systemctl restart nginx
