@@ -1,4 +1,4 @@
-name: Deploy to EC2
+name: Deploy to EC2 and Install Nginx
 
 on:
   push:
@@ -20,11 +20,24 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Connect to EC2 and run commands
+      - name: Connect to EC2 and install Nginx
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
-            # Add commands you want to run on your EC2 instance
-            echo "Connected successfully to EC2 instance"
-            # Example command: ls
-            ls
+            # Update package lists
+            sudo apt-get update
+
+            # Install Nginx
+            sudo apt-get install -y nginx
+
+            # Create a custom Nginx index page
+            echo "Welcome to my custom Nginx page!" | sudo tee /var/www/html/index.nginx-debian.html
+
+            # Restart Nginx to apply changes
+            sudo systemctl restart nginx
+
+            # Ensure Nginx is running
+            sudo systemctl status nginx
+
+            # Exit from the server
+            exit
           EOF
